@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Funeral Party - Necrologi del giorno, Città di Castello
+Funeral Calendar - Necrologi del giorno, Città di Castello
 Fonte: inmemoria.paginebianche.it (aggregatore pubblico di necrologi)
 
 Uso:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     mostra_tutti = "--tutti" in sys.argv
 
     output = [
-        f"Funeral Party - generato il {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        f"Funeral Calendar - generato il {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     ]
 
     errori = []
