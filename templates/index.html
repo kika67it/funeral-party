@@ -12,7 +12,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   :root {
     color-scheme: light;
@@ -138,6 +137,8 @@
   .badge.err { background: rgba(161, 64, 45, 0.14); color: var(--red); }
 
   .voce {
+    display: flex;
+    gap: 0.75rem;
     padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--line);
   }
@@ -187,28 +188,15 @@
     color: var(--ink-faint);
   }
 
-  section.mappa-box { padding-bottom: 0.2rem; }
-  #mappa {
-    height: 240px;
-    width: 100%;
-    background: var(--bg-raised);
+  .voce .foto {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--line);
   }
-  #mappa .leaflet-tile-pane {
-    filter: sepia(0.45) saturate(0.65) brightness(1.05) contrast(0.95);
-  }
-  .mappa-nota {
-    font-size: 0.74rem;
-    color: var(--ink-faint);
-    line-height: 1.45;
-    padding: 0.75rem 1rem 0.9rem;
-    margin: 0;
-  }
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: var(--bg-card);
-    color: var(--ink);
-  }
-  .leaflet-popup-content { font-family: "Inter", sans-serif; font-size: 0.85rem; }
-  .leaflet-container a.leaflet-popup-close-button { color: var(--ink-dim); }
+  .voce .corpo { flex: 1; min-width: 0; }
 
   footer {
     padding: 1.5rem 1.25rem 2rem;
@@ -262,64 +250,33 @@
     {% else %}
       {% for n in blocco.necrologi %}
       <div class="voce">
-        <div class="nome">{{ n.nome }}</div>
-        <a class="link-necrologio" href="{{ n.link }}" target="_blank" rel="noopener">Vai al necrologio &rarr;</a>
-        {% if n.agenzia %}
-        <div class="agenzia">
-          <span class="etichetta">Agenzia funebre</span>
-          {{ n.agenzia.nome }}{% if n.agenzia.localita %} &middot; {{ n.agenzia.localita }}{% endif %}
-        </div>
+        {% if n.foto %}
+        <img class="foto" src="{{ n.foto }}" alt="Foto di {{ n.nome }}" loading="lazy">
         {% endif %}
+        <div class="corpo">
+          <div class="nome">{{ n.nome }}</div>
+          <a class="link-necrologio" href="{{ n.link }}" target="_blank" rel="noopener">Vai al necrologio &rarr;</a>
+          {% if n.agenzia %}
+          <div class="agenzia">
+            <span class="etichetta">Agenzia funebre</span>
+            {{ n.agenzia.nome }}{% if n.agenzia.localita %} &middot; {{ n.agenzia.localita }}{% endif %}
+          </div>
+          {% endif %}
+        </div>
       </div>
       {% endfor %}
     {% endif %}
   </section>
   {% endfor %}
-
-  <section class="zona mappa-box">
-    <h2><span>Zone coperte</span></h2>
-    <div id="mappa"></div>
-    <p class="mappa-nota">
-      Il sito dei necrologi non pubblica la chiesa o il cimitero esatto: la
-      mappa mostra solo l'area dei tre comuni, non il luogo preciso della
-      singola cerimonia.
-    </p>
-  </section>
 </main>
 <footer>
   Fonte: inmemoria.paginebianche.it<br>
   L'orario e il luogo del funerale non sono pubblicati qui: apri il link del necrologio o contatta l'agenzia indicata.
 </footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
   }
-
-  const zone = [
-    {% for blocco in dati.risultati %}
-    {% if blocco.coordinate %}
-    { nome: {{ blocco.localita|tojson }}, lat: {{ blocco.coordinate[0] }}, lon: {{ blocco.coordinate[1] }} },
-    {% endif %}
-    {% endfor %}
-  ];
-
-  const mappa = L.map("mappa", { zoomControl: true, attributionControl: true, scrollWheelZoom: false })
-    .setView([43.44, 12.27], 10);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(mappa);
-
-  const iconaOro = L.divIcon({
-    className: "",
-    html: '<div style="width:14px;height:14px;border-radius:50%;background:#b8860f;border:2px solid #211c12;box-shadow:0 0 0 2px rgba(184,134,15,0.35)"></div>',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-
-  zone.forEach((z) => L.marker([z.lat, z.lon], { icon: iconaOro }).addTo(mappa).bindPopup(z.nome));
 </script>
 </body>
 </html>

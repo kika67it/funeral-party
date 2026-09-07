@@ -45,15 +45,17 @@ def raccogli_dati():
             di_oggi, data_oggi = fp.filtra_oggi(necrologi)
             for n in di_oggi:
                 try:
-                    n["agenzia"] = fp.ottieni_agenzia(n["link"])
+                    dettagli = fp.ottieni_dettagli(n["link"])
+                    n["foto"] = dettagli["foto"]
+                    n["agenzia"] = dettagli["agenzia"]
                 except (requests.RequestException, RuntimeError):
+                    n["foto"] = None
                     n["agenzia"] = None
             risultati.append({
                 "localita": nome_localita,
                 "data_oggi": data_oggi,
                 "necrologi": di_oggi,
                 "errore": None,
-                "coordinate": fp.COORDINATE_LOCALITA.get(nome_localita),
             })
         except (requests.RequestException, RuntimeError) as e:
             risultati.append({
@@ -61,7 +63,6 @@ def raccogli_dati():
                 "data_oggi": None,
                 "necrologi": [],
                 "errore": str(e),
-                "coordinate": fp.COORDINATE_LOCALITA.get(nome_localita),
             })
     return {
         "timestamp": time.time(),

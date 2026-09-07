@@ -35,16 +35,6 @@ TENTATIVI = 3
 ATTESA_TRA_TENTATIVI_SEC = 5
 
 
-# Coordinate approssimative dei centri dei tre comuni (per la mappa generica:
-# il sito non pubblica la chiesa/luogo esatto del funerale, quindi mostriamo
-# solo l'area del comune, non un punto preciso).
-COORDINATE_LOCALITA = {
-    "Città di Castello (incl. Trestina)": (43.4630, 12.2384),
-    "Umbertide": (43.3040, 12.3352),
-    "San Giustino": (43.5566, 12.2166),
-}
-
-
 def _scarica_con_retry(url):
     """GET con retry. Il sito è dietro un WAF che a volte risponde con una
     pagina vuota (202, nessun contenuto) invece della pagina richiesta: è un
@@ -122,31 +112,38 @@ def filtra_oggi(necrologi):
     return [n for n in necrologi if n["data"] == oggi], oggi
 
 
-def ottieni_agenzia(link_necrologio):
-    """Apre la pagina del singolo necrologio e legge l'agenzia funebre che se
-    ne occupa (il sito non pubblica la chiesa/luogo del funerale da nessuna
-    parte, ma l'agenzia sì, nel riquadro laterale "Servizio funebre a cura
-    di"). Ritorna un dict {nome, localita, link} oppure None se non trovata.
+def ottieni_dettagli(link_necrologio):
+    """Apre la pagina del singolo necrologio e legge quello che c'è oltre al
+    nome e alla data: la foto del defunto e l'agenzia funebre che se ne
+    occupa. Il sito NON pubblica da nessuna parte (né in testo né in
+    immagine) la chiesa, il cimitero o l'orario del funerale: l'unico modo
+    per saperlo è aprire il link del necrologio o contattare l'agenzia.
+
+    Ritorna {"foto": url|None, "agenzia": {nome, localita, link}|None}.
     """
     resp = _scarica_con_retry(link_necrologio)
     soup = BeautifulSoup(resp.text, "html.parser")
 
+    img_foto = soup.find("img", alt="Foto del defunto")
+    foto = img_foto["src"] if img_foto and img_foto.get("src") else None
+
+    agenzia = None
     titolo = soup.find("h3", class_="title-rev-08")
-    if not titolo:
-        return None
+    if titolo:
+        nome_agenzia = titolo.get_text(strip=True)
 
-    nome_agenzia = titolo.get_text(strip=True)
+        p_localita = titolo.find_next("p")
+        localita = re.sub(r"\s+", " ", p_localita.get_text(" ", strip=True)) if p_localita else None
 
-    p_localita = titolo.find_next("p")
-    localita = re.sub(r"\s+", " ", p_localita.get_text(" ", strip=True)) if p_localita else None
+        a_onoranza = titolo.find_next("a", href=True)
+        link_onoranza = None
+        if a_onoranza:
+            href = a_onoranza["href"]
+            link_onoranza = href if href.startswith("http") else f"https://inmemoria.paginebianche.it{href}"
 
-    a_onoranza = titolo.find_next("a", href=True)
-    link_onoranza = None
-    if a_onoranza:
-        href = a_onoranza["href"]
-        link_onoranza = href if href.startswith("http") else f"https://inmemoria.paginebianche.it{href}"
+        agenzia = {"nome": nome_agenzia, "localita": localita, "link": link_onoranza}
 
-    return {"nome": nome_agenzia, "localita": localita, "link": link_onoranza}
+    return {"foto": foto, "agenzia": agenzia}
 
 
 def formatta(necrologi, titolo):
