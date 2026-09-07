@@ -1,0 +1,26 @@
+{
+  "name": "Funeral Party - Necrologi",
+  "short_name": "Funeral Party",
+  "description": "Necrologi di oggi per Città di Castello, Umbertide e San Giustino",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14161c",
+  "theme_color": "#1e2129",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

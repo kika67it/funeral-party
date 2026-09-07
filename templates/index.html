@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Funeral Party</title>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<meta name="theme-color" content="#1e2129">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #14161c;
+    color: #e9e7e0;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-bottom: 3rem;
+  }
+  header {
+    padding: 1.25rem 1rem 1rem;
+    background: #1e2129;
+    border-bottom: 1px solid #2a2e38;
+    position: sticky;
+    top: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    letter-spacing: 0.02em;
+  }
+  header p {
+    margin: 0.35rem 0 0;
+    font-size: 0.8rem;
+    color: #9a9a9a;
+  }
+  main { padding: 0.75rem 1rem; }
+  section {
+    margin: 1.1rem 0;
+    background: #1b1e25;
+    border: 1px solid #262a33;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  section h2 {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: #21252e;
+    border-bottom: 1px solid #262a33;
+  }
+  .voce {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #262a33;
+  }
+  .voce:last-child { border-bottom: none; }
+  .voce .nome { font-weight: 600; }
+  .voce a {
+    display: inline-block;
+    margin-top: 0.3rem;
+    color: #e6a857;
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  .vuoto, .errore {
+    padding: 0.9rem 1rem;
+    font-size: 0.9rem;
+    color: #9a9a9a;
+  }
+  .errore { color: #d98a7c; }
+  footer {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #7a7a7a;
+  }
+  footer a { color: #9a9a9a; }
+  .refresh {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: #9a9a9a;
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Funeral Party</h1>
+  <p>Necrologi di oggi &middot; Città di Castello, Umbertide, San Giustino</p>
+  <p>Aggiornato il {{ dati.generato_il }}</p>
+</header>
+<main>
+  {% for blocco in dati.risultati %}
+  <section>
+    <h2>{{ blocco.localita }}</h2>
+    {% if blocco.errore %}
+      <div class="errore">Impossibile scaricare i dati ({{ blocco.errore }}). Riprova più tardi.</div>
+    {% elif not blocco.necrologi %}
+      <div class="vuoto">Nessun necrologio per oggi ({{ blocco.data_oggi }}).</div>
+    {% else %}
+      {% for n in blocco.necrologi %}
+      <div class="voce">
+        <div class="nome">{{ n.nome }}</div>
+        <a href="{{ n.link }}" target="_blank" rel="noopener">Vai al necrologio &rarr;</a>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </section>
+  {% endfor %}
+  <a class="refresh" href="{{ url_for('aggiorna') }}">Forza aggiornamento ora</a>
+</main>
+<footer>
+  Fonte: inmemoria.paginebianche.it &middot; l'orario e il luogo del funerale non sono pubblicati qui, apri il link del necrologio.
+</footer>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
+  }
+</script>
+</body>
+</html>

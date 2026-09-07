@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+cache.json
+funeral_party_oggi.txt
+flask_log.txt
+.claude/
