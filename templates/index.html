@@ -6,119 +6,310 @@
 <title>Funeral Calendar</title>
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-<meta name="theme-color" content="#1e2129">
+<meta name="theme-color" content="#15171c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  :root { color-scheme: dark; }
+  :root {
+    color-scheme: dark;
+    --bg: #121317;
+    --bg-raised: #191b21;
+    --bg-card: #1c1f26;
+    --line: #2a2d36;
+    --ink: #ebe8e1;
+    --ink-dim: #a3a2a0;
+    --ink-faint: #6f6e6d;
+    --gold: #d9a566;
+    --gold-soft: rgba(217, 165, 102, 0.14);
+    --red: #d98a7c;
+    --green: #7fae8e;
+  }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: #14161c;
-    color: #e9e7e0;
-    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
     padding-bottom: 3rem;
   }
+  a { -webkit-tap-highlight-color: transparent; }
+
   header {
-    padding: 1.25rem 1rem 1rem;
-    background: #1e2129;
-    border-bottom: 1px solid #2a2e38;
+    padding: calc(env(safe-area-inset-top, 0px) + 1.35rem) 1.25rem 1.15rem;
+    background: linear-gradient(180deg, var(--bg-raised), var(--bg));
+    border-bottom: 1px solid var(--line);
     position: sticky;
     top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
   }
-  header h1 {
+  .flame {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 9px;
+    background: var(--gold-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flame svg { width: 16px; height: 16px; }
+  header .titoli h1 {
     margin: 0;
-    font-size: 1.3rem;
-    letter-spacing: 0.02em;
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.32rem;
+    letter-spacing: 0.01em;
   }
-  header p {
-    margin: 0.35rem 0 0;
-    font-size: 0.8rem;
-    color: #9a9a9a;
+  header .titoli p {
+    margin: 0.2rem 0 0;
+    font-size: 0.76rem;
+    color: var(--ink-dim);
   }
-  main { padding: 0.75rem 1rem; }
-  section {
-    margin: 1.1rem 0;
-    background: #1b1e25;
-    border: 1px solid #262a33;
-    border-radius: 12px;
+
+  main {
+    padding: 1.1rem 1rem 0.5rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .aggiornato {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    margin: 0 0.1rem 1.1rem;
+  }
+  .aggiornato a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  section.zona {
+    margin: 0 0 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
     overflow: hidden;
   }
-  section h2 {
+  section.zona h2 {
     margin: 0;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    background: #21252e;
-    border-bottom: 1px solid #262a33;
+    padding: 0.85rem 1rem;
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--line);
   }
+  .badge {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.n0 { background: rgba(255,255,255,0.05); color: var(--ink-faint); }
+  .badge.n1 { background: var(--gold-soft); color: var(--gold); }
+  .badge.err { background: rgba(217, 138, 124, 0.14); color: var(--red); }
+
   .voce {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #262a33;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--line);
   }
   .voce:last-child { border-bottom: none; }
-  .voce .nome { font-weight: 600; }
-  .voce a {
-    display: inline-block;
-    margin-top: 0.3rem;
-    color: #e6a857;
+  .voce .nome {
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+  .voce .link-necrologio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    color: var(--gold);
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 500;
   }
-  .vuoto, .errore {
-    padding: 0.9rem 1rem;
-    font-size: 0.9rem;
-    color: #9a9a9a;
-  }
-  .errore { color: #d98a7c; }
-  footer {
-    padding: 1rem;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #7a7a7a;
-  }
-  footer a { color: #9a9a9a; }
-  .refresh {
-    display: inline-block;
-    margin-top: 0.75rem;
+  .agenzia {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--line);
     font-size: 0.8rem;
-    color: #9a9a9a;
-    text-decoration: underline;
+    color: var(--ink-dim);
+    line-height: 1.4;
+  }
+  .agenzia .etichetta {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.66rem;
+    display: block;
+    margin-bottom: 0.1rem;
+  }
+
+  .stato {
+    padding: 1.4rem 1rem;
+    text-align: center;
+    font-size: 0.87rem;
+    color: var(--ink-faint);
+  }
+  .stato.errore { color: var(--red); }
+  .stato .sub {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+  }
+
+  section.mappa-box { padding-bottom: 0.2rem; }
+  #mappa {
+    height: 240px;
+    width: 100%;
+    background: #1a1c22;
+  }
+  #mappa .leaflet-tile-pane {
+    filter: grayscale(1) invert(0.92) brightness(0.95) contrast(0.9);
+  }
+  .mappa-nota {
+    font-size: 0.74rem;
+    color: var(--ink-faint);
+    line-height: 1.45;
+    padding: 0.75rem 1rem 0.9rem;
+    margin: 0;
+  }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--bg-raised);
+    color: var(--ink);
+  }
+  .leaflet-popup-content { font-family: "Inter", sans-serif; font-size: 0.85rem; }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--ink-dim); }
+
+  footer {
+    padding: 1.5rem 1.25rem 2rem;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>Funeral Calendar</h1>
-  <p>Necrologi di oggi &middot; Città di Castello, Umbertide, San Giustino</p>
-  <p>Aggiornato il {{ dati.generato_il }}</p>
+  <div class="flame">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2c1 3-2 4-2 7a3 3 0 1 0 6 0c0-1-.5-1.8-1-2.5.9.4 3 2 3 5.5a6 6 0 1 1-12 0c0-4 2.5-6.5 4-8.5 1-1.3 1.7-2 2-3.5Z" fill="#d9a566"/>
+    </svg>
+  </div>
+  <div class="titoli">
+    <h1>Funeral Calendar</h1>
+    <p>Città di Castello &middot; Umbertide &middot; San Giustino</p>
+  </div>
 </header>
 <main>
+  <div class="aggiornato">
+    <span>Aggiornato il {{ dati.generato_il }}</span>
+    <a href="{{ url_for('aggiorna') }}">Aggiorna ora</a>
+  </div>
+
   {% for blocco in dati.risultati %}
-  <section>
-    <h2>{{ blocco.localita }}</h2>
+  <section class="zona">
+    <h2>
+      <span>{{ blocco.localita }}</span>
+      {% if blocco.errore %}
+        <span class="badge err">Errore</span>
+      {% elif blocco.necrologi %}
+        <span class="badge n1">{{ blocco.necrologi|length }}</span>
+      {% else %}
+        <span class="badge n0">0</span>
+      {% endif %}
+    </h2>
     {% if blocco.errore %}
-      <div class="errore">Impossibile scaricare i dati ({{ blocco.errore }}). Riprova più tardi.</div>
+      <div class="stato errore">
+        Impossibile scaricare i dati in questo momento.
+        <span class="sub">Il sito sorgente ha bloccato temporaneamente la richiesta &mdash; riprova tra qualche minuto con "Aggiorna ora".</span>
+      </div>
     {% elif not blocco.necrologi %}
-      <div class="vuoto">Nessun necrologio per oggi ({{ blocco.data_oggi }}).</div>
+      <div class="stato">Nessun necrologio per oggi ({{ blocco.data_oggi }}).</div>
     {% else %}
       {% for n in blocco.necrologi %}
       <div class="voce">
         <div class="nome">{{ n.nome }}</div>
-        <a href="{{ n.link }}" target="_blank" rel="noopener">Vai al necrologio &rarr;</a>
+        <a class="link-necrologio" href="{{ n.link }}" target="_blank" rel="noopener">Vai al necrologio &rarr;</a>
+        {% if n.agenzia %}
+        <div class="agenzia">
+          <span class="etichetta">Agenzia funebre</span>
+          {{ n.agenzia.nome }}{% if n.agenzia.localita %} &middot; {{ n.agenzia.localita }}{% endif %}
+        </div>
+        {% endif %}
       </div>
       {% endfor %}
     {% endif %}
   </section>
   {% endfor %}
-  <a class="refresh" href="{{ url_for('aggiorna') }}">Forza aggiornamento ora</a>
+
+  <section class="zona mappa-box">
+    <h2><span>Zone coperte</span></h2>
+    <div id="mappa"></div>
+    <p class="mappa-nota">
+      Il sito dei necrologi non pubblica la chiesa o il cimitero esatto: la
+      mappa mostra solo l'area dei tre comuni, non il luogo preciso della
+      singola cerimonia.
+    </p>
+  </section>
 </main>
 <footer>
-  Fonte: inmemoria.paginebianche.it &middot; l'orario e il luogo del funerale non sono pubblicati qui, apri il link del necrologio.
+  Fonte: inmemoria.paginebianche.it<br>
+  L'orario e il luogo del funerale non sono pubblicati qui: apri il link del necrologio o contatta l'agenzia indicata.
 </footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
   }
+
+  const zone = [
+    {% for blocco in dati.risultati %}
+    {% if blocco.coordinate %}
+    { nome: {{ blocco.localita|tojson }}, lat: {{ blocco.coordinate[0] }}, lon: {{ blocco.coordinate[1] }} },
+    {% endif %}
+    {% endfor %}
+  ];
+
+  const mappa = L.map("mappa", { zoomControl: true, attributionControl: true, scrollWheelZoom: false })
+    .setView([43.44, 12.27], 10);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(mappa);
+
+  const iconaOro = L.divIcon({
+    className: "",
+    html: '<div style="width:14px;height:14px;border-radius:50%;background:#d9a566;border:2px solid #121317;box-shadow:0 0 0 2px rgba(217,165,102,0.35)"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+
+  zone.forEach((z) => L.marker([z.lat, z.lon], { icon: iconaOro }).addTo(mappa).bindPopup(z.nome));
 </script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Funeral Party - Necrologi del giorno, Città di Castello
+Funeral Calendar - Necrologi del giorno, Città di Castello
 Fonte: inmemoria.paginebianche.it (aggregatore pubblico di necrologi)
 
 Uso:
@@ -35,29 +35,45 @@ TENTATIVI = 3
 ATTESA_TRA_TENTATIVI_SEC = 5
 
 
-def scarica_necrologi(url, slug):
-    """Scarica e fa il parsing di una pagina necrologi. Ritorna una lista di dict.
+# Coordinate approssimative dei centri dei tre comuni (per la mappa generica:
+# il sito non pubblica la chiesa/luogo esatto del funerale, quindi mostriamo
+# solo l'area del comune, non un punto preciso).
+COORDINATE_LOCALITA = {
+    "Città di Castello (incl. Trestina)": (43.4630, 12.2384),
+    "Umbertide": (43.3040, 12.3352),
+    "San Giustino": (43.5566, 12.2166),
+}
 
-    Il sito è dietro un WAF che a volte risponde con una pagina vuota (202,
-    nessun contenuto) invece della pagina richiesta: è un comportamento
-    intermittente lato server, non legato ai parametri della richiesta, quindi
-    ritentiamo un paio di volte prima di arrenderci.
+
+def _scarica_con_retry(url):
+    """GET con retry. Il sito è dietro un WAF che a volte risponde con una
+    pagina vuota (202, nessun contenuto) invece della pagina richiesta: è un
+    comportamento intermittente lato server, non legato ai parametri della
+    richiesta, quindi ritentiamo un paio di volte prima di arrenderci.
     """
     ultimo_errore = None
     for tentativo in range(1, TENTATIVI + 1):
         try:
             resp = requests.get(url, headers=HEADERS, timeout=15)
             resp.raise_for_status()
+            # Il sito non dichiara il charset nell'header Content-Type, quindi
+            # requests userebbe ISO-8859-1 (default HTTP) invece di UTF-8,
+            # corrompendo ogni carattere accentato: forziamo UTF-8, che è la
+            # codifica reale della pagina.
+            resp.encoding = "utf-8"
             if resp.text.strip():
-                break
+                return resp
             ultimo_errore = "risposta vuota dal server"
         except requests.RequestException as e:
             ultimo_errore = str(e)
         if tentativo < TENTATIVI:
             time.sleep(ATTESA_TRA_TENTATIVI_SEC)
-    else:
-        raise RuntimeError(f"impossibile ottenere la pagina dopo {TENTATIVI} tentativi ({ultimo_errore})")
+    raise RuntimeError(f"impossibile ottenere la pagina dopo {TENTATIVI} tentativi ({ultimo_errore})")
 
+
+def scarica_necrologi(url, slug):
+    """Scarica e fa il parsing di una pagina necrologi. Ritorna una lista di dict."""
+    resp = _scarica_con_retry(url)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     necrologi = []
@@ -106,6 +122,33 @@ def filtra_oggi(necrologi):
     return [n for n in necrologi if n["data"] == oggi], oggi
 
 
+def ottieni_agenzia(link_necrologio):
+    """Apre la pagina del singolo necrologio e legge l'agenzia funebre che se
+    ne occupa (il sito non pubblica la chiesa/luogo del funerale da nessuna
+    parte, ma l'agenzia sì, nel riquadro laterale "Servizio funebre a cura
+    di"). Ritorna un dict {nome, localita, link} oppure None se non trovata.
+    """
+    resp = _scarica_con_retry(link_necrologio)
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    titolo = soup.find("h3", class_="title-rev-08")
+    if not titolo:
+        return None
+
+    nome_agenzia = titolo.get_text(strip=True)
+
+    p_localita = titolo.find_next("p")
+    localita = re.sub(r"\s+", " ", p_localita.get_text(" ", strip=True)) if p_localita else None
+
+    a_onoranza = titolo.find_next("a", href=True)
+    link_onoranza = None
+    if a_onoranza:
+        href = a_onoranza["href"]
+        link_onoranza = href if href.startswith("http") else f"https://inmemoria.paginebianche.it{href}"
+
+    return {"nome": nome_agenzia, "localita": localita, "link": link_onoranza}
+
+
 def formatta(necrologi, titolo):
     righe = [f"\n=== {titolo} ===\n"]
     if not necrologi:
@@ -122,7 +165,7 @@ if __name__ == "__main__":
     mostra_tutti = "--tutti" in sys.argv
 
     output = [
-        f"Funeral Party - generato il {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        f"Funeral Calendar - generato il {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     ]
 
     errori = []
