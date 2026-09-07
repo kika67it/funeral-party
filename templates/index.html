@@ -225,7 +225,11 @@
 <main>
   <div class="aggiornato">
     <span>Aggiornato il {{ dati.generato_il }}</span>
-    <a href="{{ url_for('aggiorna') }}">Aggiorna ora</a>
+    <span>
+      <a href="{{ url_for('calendario') }}">Calendario 2026</a>
+      &middot;
+      <a href="{{ url_for('aggiorna') }}">Aggiorna ora</a>
+    </span>
   </div>
 
   {% for blocco in dati.risultati %}

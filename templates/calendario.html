@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendario {{ anno }} · Funeral Calendar</title>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<meta name="theme-color" content="#f6efdb">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6efdb;
+    --bg-raised: #efe3bf;
+    --bg-card: #fffdf6;
+    --line: #ddcb98;
+    --ink: #2a2620;
+    --ink-dim: #6b6252;
+    --ink-faint: #948a71;
+    --gold: #b8860f;
+    --gold-soft: rgba(184, 134, 15, 0.12);
+    --stroke: #211c12;
+    --red: #a1402d;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 3rem;
+  }
+  a { -webkit-tap-highlight-color: transparent; }
+
+  header {
+    padding: calc(env(safe-area-inset-top, 0px) + 1.35rem) 1.25rem 1.15rem;
+    background: linear-gradient(180deg, var(--bg-raised), var(--bg));
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    margin: 0;
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--gold);
+    -webkit-text-stroke: 0.7px var(--stroke);
+    text-stroke: 0.7px var(--stroke);
+  }
+  header .torna {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  main {
+    padding: 1.1rem 1rem 0.5rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .nota-top {
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    line-height: 1.5;
+    margin: 0 0.1rem 1.1rem;
+  }
+
+  details.mese {
+    margin: 0 0 0.85rem;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  details.mese > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 0.85rem 1rem;
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--gold);
+    -webkit-text-stroke: 0.55px var(--stroke);
+    text-stroke: 0.55px var(--stroke);
+    background: var(--bg-raised);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  details.mese > summary::-webkit-details-marker { display: none; }
+  details.mese > summary .conteggio {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 0.68rem;
+    -webkit-text-stroke: 0;
+    letter-spacing: 0.02em;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(42,38,32,0.06);
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  details.mese[open] > summary .conteggio.con-dati { background: var(--gold); color: #fffdf6; }
+
+  .griglia {
+    padding: 0.85rem;
+  }
+  .intestazione-giorni {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .intestazione-giorni span {
+    text-align: center;
+    font-size: 0.66rem;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .settimana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .cella {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    color: var(--ink-dim);
+  }
+  .cella.oggi { box-shadow: inset 0 0 0 1.5px var(--gold); }
+  a.cella.con-voci {
+    background: var(--gold);
+    color: #fffdf6;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .elenco-giorni { padding: 0 1rem 0.9rem; }
+  .giorno-dettaglio {
+    padding: 0.75rem 0;
+    border-top: 1px dashed var(--line);
+    scroll-margin-top: 5rem;
+  }
+  .giorno-dettaglio .data {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+  }
+  .giorno-dettaglio .voce-mini {
+    font-size: 0.85rem;
+    padding: 0.3rem 0;
+  }
+  .giorno-dettaglio .voce-mini .loc {
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+  }
+  .giorno-dettaglio a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .stato-mese {
+    padding: 0 1rem 0.9rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  footer {
+    padding: 1.5rem 1.25rem 2rem;
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    line-height: 1.5;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Calendario {{ anno }}</h1>
+  <a class="torna" href="{{ url_for('home') }}">&larr; Torna a oggi</a>
+</header>
+<main>
+  <p class="nota-top">
+    Mostra i giorni del {{ anno }} in cui c'è almeno un necrologio ancora
+    presente sul sito sorgente per Città di Castello, Umbertide o San
+    Giustino. Il sito conserva solo gli ultimi mesi: i mesi più vecchi
+    possono risultare vuoti anche se in realtà ci sono stati dei funerali.
+    Aggiornato il {{ generato_il }}.
+  </p>
+
+  {% for mese in mesi %}
+  {% set conteggio_giorni = namespace(n=0) %}
+  {% for settimana in mese.settimane %}
+    {% for cella in settimana %}
+      {% if cella.voci %}{% set conteggio_giorni.n = conteggio_giorni.n + cella.voci|length %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+  <details class="mese" {% if conteggio_giorni.n > 0 or mese.numero == oggi[3:5]|int %}open{% endif %}>
+    <summary>
+      <span>{{ mese.nome }}</span>
+      <span class="conteggio {% if conteggio_giorni.n > 0 %}con-dati{% endif %}">{{ conteggio_giorni.n }}</span>
+    </summary>
+    <div class="griglia">
+      <div class="intestazione-giorni">
+        <span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span>
+      </div>
+      {% for settimana in mese.settimane %}
+      <div class="settimana">
+        {% for cella in settimana %}
+          {% if cella.giorno is none %}
+            <div class="cella"></div>
+          {% elif cella.voci %}
+            <a class="cella con-voci {% if '%02d/%02d/%d'|format(cella.giorno, mese.numero, anno) == oggi %}oggi{% endif %}"
+               href="#g{{ '%02d%02d'|format(cella.giorno, mese.numero) }}">{{ cella.giorno }}</a>
+          {% else %}
+            <div class="cella {% if '%02d/%02d/%d'|format(cella.giorno, mese.numero, anno) == oggi %}oggi{% endif %}">{{ cella.giorno }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if conteggio_giorni.n > 0 %}
+    <div class="elenco-giorni">
+      {% for settimana in mese.settimane %}
+        {% for cella in settimana %}
+          {% if cella.voci %}
+          <div class="giorno-dettaglio" id="g{{ '%02d%02d'|format(cella.giorno, mese.numero) }}">
+            <div class="data">{{ '%02d/%02d/%d'|format(cella.giorno, mese.numero, anno) }}</div>
+            {% for v in cella.voci %}
+            <div class="voce-mini">
+              <a href="{{ v.link }}" target="_blank" rel="noopener">{{ v.nome }}</a>
+              <span class="loc">&middot; {{ v.localita }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="stato-mese">Nessun necrologio disponibile per questo mese sul sito sorgente.</p>
+    {% endif %}
+  </details>
+  {% endfor %}
+</main>
+<footer>
+  Fonte: inmemoria.paginebianche.it<br>
+  L'orario e il luogo del funerale non sono pubblicati qui: apri il link del necrologio o contatta l'agenzia indicata.
+</footer>
+</body>
+</html>
