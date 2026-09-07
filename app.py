@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Funeral Calendar - servizio web
+Funeral Party - servizio web
 Mostra i necrologi di oggi per Città di Castello (incl. Trestina), Umbertide
 e San Giustino. Aggiorna i dati al massimo una volta al giorno (cache su
 disco) invece di scaricare la pagina a ogni visita.
