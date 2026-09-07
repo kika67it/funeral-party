@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from flask import Flask, redirect, render_template, url_for
+from flask import Flask, redirect, render_template, send_from_directory, url_for
 
 import funeral_party as fp
 
@@ -124,6 +124,11 @@ def costruisci_calendario(tutti, anno):
             settimane.append(celle)
         mesi.append({"nome": MESI_IT[mese - 1], "numero": mese, "settimane": settimane})
     return mesi
+
+
+@app.route("/robots.txt")
+def robots():
+    return send_from_directory(app.static_folder, "robots.txt")
 
 
 @app.route("/")

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <title>Calendario {{ anno }} · Funeral Calendar</title>
 <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
@@ -193,6 +194,7 @@
     max-width: 640px;
     margin: 0 auto;
   }
+  footer a { color: var(--gold); font-weight: 600; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -267,7 +269,8 @@
 </main>
 <footer>
   Fonte: inmemoria.paginebianche.it<br>
-  L'orario e il luogo del funerale non sono pubblicati qui: apri il link del necrologio o contatta l'agenzia indicata.
+  L'orario e il luogo del funerale non sono pubblicati qui: apri il link del necrologio o contatta l'agenzia indicata.<br>
+  Per chiedere la rimozione di un nominativo: <a href="mailto:kika67it@gmail.com?subject=Richiesta%20rimozione%20necrologio">kika67it@gmail.com</a>
 </footer>
 </body>
 </html>
