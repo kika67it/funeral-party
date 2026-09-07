@@ -277,6 +277,22 @@
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
   }
+
+  // Ricarica da sola ogni 15 minuti mentre la pagina è aperta e visibile, e
+  // anche quando torna in primo piano dopo essere stata in background per
+  // più di 15 minuti: così i necrologi nuovi arrivano senza dover premere
+  // "Aggiorna ora" a mano.
+  const INTERVALLO_AGGIORNAMENTO_MS = 15 * 60 * 1000;
+  let ultimoAggiornamento = Date.now();
+  setInterval(() => {
+    if (document.visibilityState === "visible") location.reload();
+  }, INTERVALLO_AGGIORNAMENTO_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && Date.now() - ultimoAggiornamento > INTERVALLO_AGGIORNAMENTO_MS) {
+      ultimoAggiornamento = Date.now();
+      location.reload();
+    }
+  });
 </script>
 </body>
 </html>

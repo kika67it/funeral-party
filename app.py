@@ -18,7 +18,7 @@ import funeral_party as fp
 app = Flask(__name__)
 
 CACHE_FILE = Path(__file__).resolve().parent / "cache.json"
-CACHE_TTL_SECONDI = 24 * 3600  # riscarica al massimo una volta al giorno
+CACHE_TTL_SECONDI = 3 * 3600  # riscarica al massimo ogni 3 ore
 
 
 def carica_cache():
